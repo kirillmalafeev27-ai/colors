@@ -35,9 +35,10 @@ function findIndex() {
 const CACHE_DIR = path.join(process.env.TMPDIR || '/tmp', 'tts-cache');
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-// статика (если рядом со страницей есть другие файлы)
+// статика (если рядом со страницей есть другие файлы); саму index.html
+// отдаём ниже через catch-all с запретом кэша, чтобы правки доезжали сразу
 const found = findIndex();
-if (found) app.use(express.static(path.dirname(found), { maxAge: '1h' }));
+if (found) app.use(express.static(path.dirname(found), { index: false, maxAge: '1h' }));
 
 app.get('/api/config', (req, res) => {
   res.json({ voiceId: VOICE_ID, modelId: MODEL_ID, lang: LANG, hasKey: !!API_KEY });
@@ -100,7 +101,10 @@ app.post('/api/tts', async (req, res) => {
 // Любой GET-запрос (кроме /api) отдаёт страницу — поэтому "/" всегда работает
 app.get(/^(?!\/api).*/, (req, res) => {
   const idx = findIndex();
-  if (idx) return res.sendFile(idx);
+  if (idx) {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    return res.sendFile(idx);
+  }
   res.status(500).send(
     '<h2>index.html не найден на сервере.</h2>' +
     '<p>Проверьте, что в репозитории есть файл <code>public/index.html</code> ' +

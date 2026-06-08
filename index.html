@@ -251,7 +251,7 @@
     <button class="btn ghost" id="resetBtn">↺ neu</button>
     <button class="btn" id="nextBtn">weiter →</button>
   </div>
-  <div class="footer">для маленькой ученицы 👧 · сделано с любовью</div>
+  <div class="footer">для маленькой ученицы 👧 · сделано с любовью · <b>v4 (алфавит + перемешивание)</b></div>
 </div>
 
 <script>
@@ -270,8 +270,18 @@ const GRAPHEME_COLOR = {
   'h':'#06d6a0', 'w':'#5e60ce', 'ß':'#bc8a5f', 'd':'#2a9d8f', 'g':'#577590'
 };
 
+// Как озвучивать букву по умолчанию: НЕМЕЦКИЕ НАЗВАНИЯ букв (как в алфавите).
+// Буквосочетания читаются слитным звуком (у них нет алфавитного "имени").
+// Любое значение можно переопределить 3-м аргументом в L()/C().
+const LETTER_NAME = {
+  'a':'Ah', 'e':'Eh', 'i':'Ih', 'o':'Oh', 'u':'Uh',
+  'm':'Em', 'l':'El', 's':'Es', 'n':'En', 't':'Teh', 'h':'Hah',
+  'w':'Weh', 'd':'Deh', 'g':'Geh', 'ß':'Eszett',
+  'ie':'ie', 'ei':'ei', 'sch':'sch', 'ch':'ch'
+};
+
 function tok(ch, g, kind, speak){
-  return { ch, g, kind, speak: speak || ch, color: GRAPHEME_COLOR[g] || '#888' };
+  return { ch, g, kind, speak: speak || LETTER_NAME[g] || ch, color: GRAPHEME_COLOR[g] || '#888' };
 }
 const L = (ch, g, speak) => tok(ch, g, 'letter', speak);   // кружок
 const C = (ch, g, speak) => tok(ch, g, 'combo',  speak);   // квадрат
@@ -300,7 +310,7 @@ const LESSONS = [
   { id:'wie-heisst-du', mode:'word', ru:'Как тебя зовут?', phrase:'Wie heißt du?',
     words:[
       [ L('W','w'), C('ie','ie') ],
-      [ L('h','h'), C('ei','ei'), L('ß','ß','ss'), L('t','t') ],
+      [ L('h','h'), C('ei','ei'), L('ß','ß'), L('t','t') ],
       [ L('d','d'), L('u','u') ]
     ] },
 
@@ -331,6 +341,15 @@ function isLight(hex){
   return lum > 0.62;
 }
 function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+// перемешанный порядок индексов, заведомо не совпадающий с исходным
+function shuffledOrder(n){
+  const base = Array.from({length:n}, (_,i)=>i);
+  if(n<2) return base;
+  let arr = shuffle(base), tries=0;
+  while(tries<12 && arr.every((v,i)=>v===i)){ arr = shuffle(base); tries++; }
+  return arr;
+}
 
 /* ===================== АУДИО + КЭШ (IndexedDB) ===================== */
 const memCache = new Map();
@@ -480,11 +499,10 @@ function renderLesson(){
     keyRow.appendChild(el);
   });
 
-  // --- пустые фигуры ---
+  // --- пустые фигуры: ПОРЯДОК ПЕРЕМЕШАН (не совпадает с образцом) ---
   const playRow = $('playRow'); playRow.innerHTML='';
-  tokens.forEach((t, i) => {
-    if(wordStart.has(i)){ const gap=document.createElement('div'); gap.className='wordgap'; playRow.appendChild(gap); }
-    const el = makeShape(t);
+  shuffledOrder(tokens.length).forEach(i => {
+    const el = makeShape(tokens[i]);
     el.dataset.index = i;
     el.addEventListener('click', ()=> onBlankClick(i, el));
     playRow.appendChild(el);
