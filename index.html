@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Deutsch lesen lernen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#fff7ec; --bg2:#ffe3cf; --bg3:#e9f6f8;
+    --ink:#3a2c23; --muted:#9a8474;
+    --card:#fffdfa; --line:#efe2d2;
+    --accent:#ff6b6b; --accent2:#1b9aaa; --ring:#ffc43d;
+    --shape:74px; --shape-sm:60px;
+    --radius:28px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family:'Nunito',system-ui,sans-serif;
+    color:var(--ink);
+    min-height:100dvh;
+    background:
+      radial-gradient(120% 90% at 12% 0%, var(--bg2) 0%, transparent 55%),
+      radial-gradient(120% 90% at 92% 8%, var(--bg3) 0%, transparent 50%),
+      linear-gradient(180deg, var(--bg1), #fff8f0 70%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:660px; margin:0 auto; padding:18px 16px 120px;}
+
+  h1,h2,h3{font-family:'Fredoka',sans-serif; font-weight:600; margin:0;}
+
+  /* ---------- верхняя панель ---------- */
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .logo{font-size:30px;}
+  .brand b{font-family:'Fredoka',sans-serif; font-size:20px;}
+  .iconbtn{
+    border:none; cursor:pointer; background:var(--card); color:var(--ink);
+    width:46px; height:46px; border-radius:16px; font-size:20px;
+    box-shadow:0 6px 16px -8px rgba(120,80,40,.5); border:2px solid var(--line);
+    display:grid; place-items:center; transition:transform .12s;
+  }
+  .iconbtn:active{transform:scale(.92);}
+
+  /* ---------- карточка-урок ---------- */
+  .card{
+    background:var(--card); border:2px solid var(--line); border-radius:var(--radius);
+    padding:18px 16px; margin-bottom:16px;
+    box-shadow:0 22px 50px -26px rgba(120,80,40,.5);
+  }
+  .card-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;}
+  .card-title{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .card-title .de{font-family:'Fredoka',sans-serif; font-size:26px;}
+  .card-title .ru{color:var(--muted); font-size:14px; font-weight:700;}
+  .hint{color:var(--muted); font-size:13px; font-weight:700; margin:-4px 0 12px;}
+
+  /* ---------- ряды фигур ---------- */
+  .row{display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:center;}
+  .wordgap{flex:0 0 18px;}
+  @media (max-width:430px){ .wordgap{flex-basis:8px;} }
+
+  .shape{
+    width:var(--shape); height:var(--shape);
+    display:grid; place-items:center;
+    font-family:'Fredoka',sans-serif; font-size:30px; font-weight:600;
+    cursor:pointer; user-select:none; position:relative;
+    transition:transform .12s ease;
+  }
+  .shape.circle{border-radius:50%;}
+  .shape.square{border-radius:20px;}
+  @media (max-width:430px){ .shape{width:var(--shape-sm); height:var(--shape-sm); font-size:25px;} }
+
+  /* образец (озвучка) */
+  .key .shape{
+    color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.28);
+    box-shadow: inset 0 -7px 0 rgba(0,0,0,.14), 0 9px 20px -10px rgba(0,0,0,.5);
+  }
+  .key .shape:active{transform:scale(.9);}
+  .key .shape::after{content:"🔊"; position:absolute; top:-9px; right:-7px; font-size:13px;
+    background:#fff; border-radius:50%; padding:2px 3px; box-shadow:0 2px 6px rgba(0,0,0,.2); opacity:.9;}
+  /* режим "образец скрыт" */
+  body.no-sample .key .shape{background:#efe6da!important; color:transparent;
+    box-shadow:inset 0 -7px 0 rgba(0,0,0,.05), 0 6px 16px -10px rgba(0,0,0,.3);}
+  body.no-sample .key .shape::before{content:"?"; color:#c9b8a4;}
+
+  /* пустые фигуры (собрать самому) */
+  .play .shape{
+    background:transparent; border:3px dashed #d6c4ad; color:transparent;
+  }
+  .play .shape.square{border-style:dashed;}
+  .play .shape.selected{
+    border-color:var(--accent); transform:scale(1.07);
+    box-shadow:0 0 0 6px rgba(255,107,107,.18);
+  }
+  .play .shape.filled{border-style:solid; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.28);
+    box-shadow:inset 0 -7px 0 rgba(0,0,0,.14), 0 9px 20px -10px rgba(0,0,0,.5);}
+  .play .shape.filled.darktext{color:#3a2c23; text-shadow:none;}
+  .play .shape.locked::after{content:"✓"; position:absolute; bottom:-8px; right:-8px;
+    width:26px; height:26px; border-radius:50%; background:#06d6a0; color:#fff;
+    display:grid; place-items:center; font-size:15px; box-shadow:0 4px 10px -3px rgba(0,0,0,.4);}
+  .play .shape.locked{cursor:default;}
+
+  .shake{animation:shake .4s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-7px) rotate(-3deg);}
+    40%{transform:translateX(7px) rotate(3deg);}
+    60%{transform:translateX(-5px) rotate(-2deg);}
+    80%{transform:translateX(5px) rotate(2deg);}
+  }
+  .pop{animation:pop .35s;}
+  @keyframes pop{ 0%{transform:scale(.8);} 60%{transform:scale(1.18);} 100%{transform:scale(1);} }
+
+  /* ---------- палитра ---------- */
+  .palette .card-title .de{font-size:20px;}
+  .pal-group-label{font-size:13px; font-weight:800; color:var(--muted); margin:6px 0 8px; letter-spacing:.02em;}
+  .divider{height:2px; background:repeating-linear-gradient(90deg,var(--line) 0 10px,transparent 10px 18px); margin:16px 0;}
+  .swatch{
+    width:58px; height:58px; border-radius:50%; cursor:pointer; border:3px solid #fff;
+    box-shadow:inset 0 -6px 0 rgba(0,0,0,.12), 0 8px 18px -9px rgba(0,0,0,.5);
+    transition:transform .12s;
+  }
+  .swatch:active{transform:scale(.9);}
+  .tile{
+    width:58px; height:58px; background:#fffdfa; border:3px solid var(--line);
+    display:grid; place-items:center; font-family:'Fredoka',sans-serif; font-size:25px;
+    color:var(--ink); cursor:pointer; transition:transform .12s;
+    box-shadow:0 8px 18px -10px rgba(120,80,40,.5);
+  }
+  .tile.circle{border-radius:50%;}
+  .tile.square{border-radius:16px;}
+  .tile:active{transform:scale(.9);}
+
+  /* ---------- прогресс / победа ---------- */
+  .progress{display:flex; align-items:center; gap:8px; font-weight:800; color:var(--muted); font-size:14px;}
+  .stars{letter-spacing:2px;}
+  .win{
+    text-align:center; padding:10px 6px 4px;
+  }
+  .win .big{font-family:'Fredoka',sans-serif; font-size:26px; color:var(--accent2);}
+  .win .sub{color:var(--muted); font-weight:700; margin-top:4px;}
+  .btn{
+    border:none; cursor:pointer; font-family:'Fredoka',sans-serif; font-weight:600;
+    font-size:18px; padding:12px 22px; border-radius:18px; color:#fff;
+    background:linear-gradient(180deg,#ff8a8a,var(--accent));
+    box-shadow:0 12px 24px -10px rgba(255,107,107,.8); transition:transform .12s;
+  }
+  .btn:active{transform:translateY(2px) scale(.98);}
+  .btn.ghost{background:#fff; color:var(--accent2); border:2px solid var(--line); box-shadow:none;}
+  .btn-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px;}
+
+  /* listen-to-phrase кнопка */
+  .listen{
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+    background:linear-gradient(180deg,#7fd1da,var(--accent2)); color:#fff; border:none;
+    font-family:'Fredoka',sans-serif; font-size:16px; padding:10px 16px; border-radius:16px;
+    box-shadow:0 12px 24px -10px rgba(27,154,170,.8); transition:transform .12s;
+  }
+  .listen:active{transform:scale(.96);}
+
+  /* баннер ошибки/настройки ключа */
+  .banner{display:none; background:#fff3cd; border:2px solid #ffe08a; color:#7a5b00;
+    border-radius:18px; padding:12px 14px; font-weight:700; font-size:14px; margin-bottom:14px;}
+  .banner.show{display:block;}
+
+  /* помощь родителю */
+  .help{display:none; font-size:14px; line-height:1.55; color:#5a4a3c;}
+  .help.show{display:block;}
+  .help h3{font-size:16px; margin:12px 0 4px;}
+  .help code{background:#f3ece2; padding:1px 6px; border-radius:7px; font-size:13px;}
+  .help ol{padding-left:20px;} .help li{margin:5px 0;}
+
+  /* конфетти */
+  #confetti{position:fixed; inset:0; pointer-events:none; z-index:50;}
+  .footer{text-align:center; color:var(--muted); font-size:12px; font-weight:700; margin-top:8px;}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand"><span class="logo">📚</span><b>Deutsch lesen</b></div>
+    <div style="display:flex; gap:8px;">
+      <button class="iconbtn" id="toggleSample" title="Показать/скрыть образец">👁️</button>
+      <button class="iconbtn" id="helpBtn" title="Помощь">❓</button>
+    </div>
+  </div>
+
+  <div class="banner" id="banner"></div>
+
+  <!-- помощь родителю -->
+  <div class="card help" id="help">
+    <h2 style="font-size:20px;">Как это работает</h2>
+    <p>Сверху — <b>образец</b>: цветные кружки (буквы) и квадратики (буквосочетания). Нажми на любой — услышишь звук. Ниже — такие же <b>пустые</b> фигуры. Внизу — <b>палитра</b> из цветов и букв.</p>
+    <ol>
+      <li>Нажми на пустую фигуру — услышишь её звук, фигура подсветится.</li>
+      <li>Подбери в палитре <b>такой же цвет</b> и <b>такую же букву</b>, как в образце.</li>
+      <li>Правильно — фигура заполняется ✓. Неправильно — фигура «помотает головой», попробуй ещё.</li>
+    </ol>
+    <h3>Звук кэшируется</h3>
+    <p>Каждый звук запрашивается у ElevenLabs только один раз, потом берётся из памяти браузера — API лишний раз не дёргается.</p>
+    <h3>Как менять уроки и звуки</h3>
+    <p>Открой <code>public/index.html</code> и найди массив <code>LESSONS</code>. Там фразы из «токенов»: <code>L('a','a')</code> — буква-кружок, <code>C('Sch','sch')</code> — буквосочетание-квадрат. Третьим аргументом можно задать, что именно отправлять в озвучку, например <code>L('ß','ß','ss')</code>, если стандартное звучание не нравится.</p>
+  </div>
+
+  <!-- ОБРАЗЕЦ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">
+        <span class="de" id="lessonDe">…</span>
+        <span class="ru" id="lessonRu"></span>
+      </div>
+      <button class="listen" id="listenAll">🔊 ganzes Wort</button>
+    </div>
+    <div class="hint">👂 Образец — нажми на фигуру, услышишь звук</div>
+    <div class="row key" id="keyRow"></div>
+  </div>
+
+  <!-- СОБЕРИ САМ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="de">✏️ Mach es selbst</span></div>
+      <div class="progress"><span class="stars" id="stars"></span><span id="progressTxt"></span></div>
+    </div>
+    <div class="hint">Нажми пустую фигуру → выбери цвет и букву из палитры</div>
+    <div class="row play" id="playRow"></div>
+    <div id="winBox"></div>
+  </div>
+
+  <!-- ПАЛИТРА -->
+  <div class="card palette">
+    <div class="card-head"><div class="card-title"><span class="de">🎨 Palette</span></div></div>
+    <div class="pal-group-label">🎨 Цвета</div>
+    <div class="row" id="paletteColors"></div>
+    <div class="divider"></div>
+    <div class="pal-group-label">🔤 Буквы</div>
+    <div class="row" id="paletteLetters"></div>
+  </div>
+
+  <!-- НАВИГАЦИЯ ПО УРОКАМ -->
+  <div class="btn-row">
+    <button class="btn ghost" id="prevBtn">← zurück</button>
+    <button class="btn ghost" id="resetBtn">↺ neu</button>
+    <button class="btn" id="nextBtn">weiter →</button>
+  </div>
+  <div class="footer">для маленькой ученицы 👧 · сделано с любовью</div>
+</div>
+
+<script>
+/* =========================================================================
+   ДАННЫЕ УРОКОВ  (это можно свободно редактировать)
+   L(буква, ключ-цвета [, что-озвучить])  -> кружок
+   C(сочетание, ключ-цвета [, что-озвучить]) -> квадрат
+   ========================================================================= */
+
+// один и тот же звук всегда красится одним цветом — так легче запоминать
+const GRAPHEME_COLOR = {
+  'm':'#ef476f', 'a':'#118ab2', 'h':'#06d6a0', 'l':'#9b5de5', 'o':'#f78c6b',
+  'sch':'#ff70a6', 'u':'#ffc43d', 'e':'#1b9aaa', 'w':'#5e60ce', 'ie':'#80b918',
+  'ei':'#48cae4', 'ß':'#bc8a5f', 't':'#e76f51', 'd':'#2a9d8f', 'n':'#7209b7',
+  'p':'#f4a261', 's':'#43aa8b', 'g':'#577590'
+};
+
+function tok(ch, g, kind, speak){
+  return { ch, g, kind, speak: speak || ch, color: GRAPHEME_COLOR[g] || '#888' };
+}
+const L = (ch, g, speak) => tok(ch, g, 'letter', speak);   // кружок
+const C = (ch, g, speak) => tok(ch, g, 'combo',  speak);   // квадрат
+
+const LESSONS = [
+  { id:'mama', ru:'Мама', phrase:'Mama',
+    words:[[ L('M','m'), L('a','a'), L('m','m'), L('a','a') ]] },
+
+  { id:'hallo', ru:'Привет', phrase:'Hallo',
+    words:[[ L('H','h'), L('a','a'), L('l','l'), L('l','l'), L('o','o') ]] },
+
+  { id:'oma', ru:'Бабушка', phrase:'Oma',
+    words:[[ L('O','o'), L('m','m'), L('a','a') ]] },
+
+  { id:'schule', ru:'Школа', phrase:'Schule',
+    words:[[ C('Sch','sch'), L('u','u'), L('l','l'), L('e','e') ]] },
+
+  { id:'wie-heisst-du', ru:'Как тебя зовут?', phrase:'Wie heißt du?',
+    words:[
+      [ L('W','w'), C('ie','ie') ],
+      [ L('h','h'), C('ei','ei'), L('ß','ß','ss'), L('t','t') ],
+      [ L('d','d'), L('u','u') ]
+    ] },
+
+  { id:'guten-tag', ru:'Добрый день', phrase:'Guten Tag',
+    words:[
+      [ L('G','g'), L('u','u'), L('t','t'), L('e','e'), L('n','n') ],
+      [ L('T','t'), L('a','a'), L('g','g') ]
+    ] }
+];
+
+/* ========================================================================= */
+
+let cfg = { voiceId:'', modelId:'', lang:'de', hasKey:false };
+let lessonIndex = 0;
+let tokens = [];          // плоский список токенов текущего урока
+let wordStart = new Set(); // индексы, перед которыми ставим пробел между словами
+let state = [];           // на каждый пустой токен: {color, g, locked}
+let selected = -1;
+let audioCtx = null;
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------- цвет текста (тёмный на светлом фоне) ---------- */
+function isLight(hex){
+  const m = hex.replace('#','');
+  const r = parseInt(m.slice(0,2),16), g = parseInt(m.slice(2,4),16), b = parseInt(m.slice(4,6),16);
+  const lum = (0.299*r + 0.587*g + 0.114*b)/255;
+  return lum > 0.62;
+}
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ===================== АУДИО + КЭШ (IndexedDB) ===================== */
+const memCache = new Map();
+function openDB(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('ttsdb', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('audio');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k){
+  try{ const db = await openDB();
+    return await new Promise((res)=>{ const t = db.transaction('audio').objectStore('audio').get(k);
+      t.onsuccess=()=>res(t.result||null); t.onerror=()=>res(null); });
+  }catch(e){ return null; }
+}
+async function idbSet(k,v){
+  try{ const db = await openDB();
+    await new Promise((res)=>{ const tx = db.transaction('audio','readwrite');
+      tx.objectStore('audio').put(v,k); tx.oncomplete=()=>res(); tx.onerror=()=>res(); });
+  }catch(e){}
+}
+
+function cacheKey(text){ return cfg.voiceId+'|'+cfg.modelId+'|'+cfg.lang+'|'+text; }
+
+async function getBlob(text){
+  const key = cacheKey(text);
+  if(memCache.has(key)) return memCache.get(key);
+  let blob = await idbGet(key);
+  if(blob){ memCache.set(key, blob); return blob; }
+  const r = await fetch('/api/tts', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ text })
+  });
+  if(!r.ok){
+    let msg = 'Ошибка озвучки';
+    try{ const j = await r.json(); msg = j.detail || j.error || msg; }catch(e){}
+    throw new Error(msg);
+  }
+  blob = await r.blob();
+  memCache.set(key, blob);
+  idbSet(key, blob);
+  return blob;
+}
+
+let currentAudio = null;
+async function play(text){
+  try{
+    const blob = await getBlob(text);
+    const url = URL.createObjectURL(blob);
+    if(currentAudio){ try{ currentAudio.pause(); }catch(e){} }
+    currentAudio = new Audio(url);
+    currentAudio.play().catch(()=>{});
+    setTimeout(()=>URL.revokeObjectURL(url), 8000);
+    hideBanner();
+  }catch(e){
+    showBanner('🔊 ' + e.message);
+  }
+}
+
+// фоновая «прогрузка» всех звуков урока, чтобы нажатия были мгновенными
+async function prewarm(){
+  const texts = new Set();
+  texts.add(LESSONS[lessonIndex].phrase);
+  tokens.forEach(t => texts.add(t.speak));
+  for(const t of texts){
+    try{ await getBlob(t); }catch(e){ /* тихо */ }
+  }
+}
+
+/* ===================== ВЕСЁЛЫЙ ЗВУК УСПЕХА ===================== */
+function ensureCtx(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }
+function chime(notes){
+  ensureCtx(); if(!audioCtx) return;
+  notes.forEach((f,i)=>{
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    const t0 = audioCtx.currentTime + i*0.09;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.25, t0+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+0.28);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0+0.3);
+  });
+}
+const chimeStep = () => chime([659.25, 880]);          // E5, A5
+const chimeWin  = () => chime([523.25,659.25,783.99,1046.5]); // C E G C
+
+/* ===================== БАННЕР ===================== */
+function showBanner(msg){ const b=$('banner'); b.textContent=msg; b.classList.add('show'); }
+function hideBanner(){ $('banner').classList.remove('show'); }
+
+/* ===================== РЕНДЕР УРОКА ===================== */
+function buildTokens(){
+  const lesson = LESSONS[lessonIndex];
+  tokens = []; wordStart = new Set();
+  lesson.words.forEach((word, wi) => {
+    word.forEach((t, ti) => {
+      if(wi>0 && ti===0) wordStart.add(tokens.length);
+      tokens.push(t);
+    });
+  });
+}
+
+function makeShape(t, cls){
+  const el = document.createElement('div');
+  el.className = 'shape ' + (t.kind==='letter' ? 'circle' : 'square') + (cls?(' '+cls):'');
+  return el;
+}
+
+function renderLesson(){
+  const lesson = LESSONS[lessonIndex];
+  buildTokens();
+  state = tokens.map(()=>({ color:null, g:null, locked:false }));
+  selected = -1;
+
+  $('lessonDe').textContent = lesson.phrase;
+  $('lessonRu').textContent = lesson.ru;
+
+  // --- образец ---
+  const keyRow = $('keyRow'); keyRow.innerHTML='';
+  tokens.forEach((t, i) => {
+    if(wordStart.has(i)){ const gap=document.createElement('div'); gap.className='wordgap'; keyRow.appendChild(gap); }
+    const el = makeShape(t);
+    el.style.background = t.color;
+    el.textContent = t.ch;
+    el.addEventListener('click', ()=> play(t.speak));
+    keyRow.appendChild(el);
+  });
+
+  // --- пустые фигуры ---
+  const playRow = $('playRow'); playRow.innerHTML='';
+  tokens.forEach((t, i) => {
+    if(wordStart.has(i)){ const gap=document.createElement('div'); gap.className='wordgap'; playRow.appendChild(gap); }
+    const el = makeShape(t);
+    el.dataset.index = i;
+    el.addEventListener('click', ()=> onBlankClick(i, el));
+    playRow.appendChild(el);
+  });
+
+  // --- палитра: цвета ---
+  const seenColor = new Set(), colors = [];
+  tokens.forEach(t => { if(!seenColor.has(t.color)){ seenColor.add(t.color); colors.push(t.color); } });
+  const colRow = $('paletteColors'); colRow.innerHTML='';
+  shuffle(colors).forEach(c => {
+    const s = document.createElement('div'); s.className='swatch'; s.style.background=c;
+    s.addEventListener('click', ()=> onColorClick(c, s));
+    colRow.appendChild(s);
+  });
+
+  // --- палитра: буквы ---
+  const seenG = new Set(), letters = [];
+  tokens.forEach(t => { if(!seenG.has(t.g)){ seenG.add(t.g); letters.push(t); } });
+  const letRow = $('paletteLetters'); letRow.innerHTML='';
+  shuffle(letters).forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'tile ' + (t.kind==='letter'?'circle':'square');
+    el.textContent = t.ch;
+    el.addEventListener('click', ()=> onLetterClick(t.g, el));
+    letRow.appendChild(el);
+  });
+
+  $('winBox').innerHTML='';
+  updateProgress();
+  $('prevBtn').style.visibility = lessonIndex>0 ? 'visible':'hidden';
+  $('nextBtn').style.visibility = lessonIndex<LESSONS.length-1 ? 'visible':'hidden';
+
+  prewarm(); // тихо прогреваем кэш
+}
+
+/* ===================== ВЗАИМОДЕЙСТВИЕ ===================== */
+function blankEl(i){ return document.querySelector('.play .shape[data-index="'+i+'"]'); }
+
+function onBlankClick(i, el){
+  if(state[i].locked){ play(tokens[i].speak); return; }
+  // снять прошлый выбор
+  document.querySelectorAll('.play .shape.selected').forEach(s=>s.classList.remove('selected'));
+  selected = i;
+  el.classList.add('selected');
+  play(tokens[i].speak);
+}
+
+function shakeEl(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+function applyFill(i){
+  const el = blankEl(i), t = tokens[i], s = state[i];
+  if(s.color && s.g){
+    el.classList.add('filled');
+    el.style.background = s.color;
+    el.textContent = t.ch;
+    el.classList.toggle('darktext', isLight(s.color));
+  }
+}
+
+function onColorClick(c, sw){
+  if(selected<0){ shakeEl(sw); return; }
+  const i = selected, t = tokens[i];
+  if(c === t.color){
+    state[i].color = c;
+    applyFill(i);
+    blankEl(i).classList.add('pop'); setTimeout(()=>blankEl(i).classList.remove('pop'),350);
+    checkLock(i);
+  } else {
+    shakeEl(blankEl(i)); shakeEl(sw);
+  }
+}
+
+function onLetterClick(g, tile){
+  if(selected<0){ shakeEl(tile); return; }
+  const i = selected, t = tokens[i];
+  if(g === t.g){
+    state[i].g = g;
+    applyFill(i);
+    blankEl(i).classList.add('pop'); setTimeout(()=>blankEl(i).classList.remove('pop'),350);
+    checkLock(i);
+  } else {
+    shakeEl(blankEl(i)); shakeEl(tile);
+  }
+}
+
+function checkLock(i){
+  const s = state[i];
+  if(s.color && s.g && !s.locked){
+    s.locked = true;
+    const el = blankEl(i);
+    el.classList.add('locked','filled');
+    el.classList.remove('selected');
+    chimeStep();
+    selected = -1;
+    updateProgress();
+    if(state.every(x=>x.locked)) onWin();
+  }
+}
+
+function updateProgress(){
+  const done = state.filter(x=>x.locked).length;
+  const total = state.length;
+  $('progressTxt').textContent = done+' / '+total;
+  const full = Math.round(done/total*3);
+  $('stars').textContent = '★★★'.slice(0,full) + '☆☆☆'.slice(0,3-full);
+}
+
+function onWin(){
+  chimeWin();
+  burstConfetti();
+  setTimeout(()=> play(LESSONS[lessonIndex].phrase), 350);
+  const last = lessonIndex >= LESSONS.length-1;
+  $('winBox').innerHTML =
+    '<div class="win"><div class="big">🎉 Super! '+LESSONS[lessonIndex].phrase+'</div>'+
+    '<div class="sub">'+LESSONS[lessonIndex].ru+'</div>'+
+    '<div class="btn-row">'+
+      '<button class="btn ghost" id="winReplay">↺ noch mal</button>'+
+      (last? '<button class="btn" id="winRestart">🏠 von vorne</button>'
+           : '<button class="btn" id="winNext">weiter →</button>')+
+    '</div></div>';
+  const r = $('winReplay'); if(r) r.onclick = renderLesson;
+  const n = $('winNext'); if(n) n.onclick = ()=>{ lessonIndex++; renderLesson(); window.scrollTo({top:0,behavior:'smooth'}); };
+  const rs = $('winRestart'); if(rs) rs.onclick = ()=>{ lessonIndex=0; renderLesson(); window.scrollTo({top:0,behavior:'smooth'}); };
+}
+
+/* ===================== КОНФЕТТИ ===================== */
+const cv = $('confetti'), cx = cv.getContext('2d');
+function fitCanvas(){ cv.width = innerWidth; cv.height = innerHeight; }
+addEventListener('resize', fitCanvas); fitCanvas();
+let parts = [];
+function burstConfetti(){
+  const colors = ['#ef476f','#ffd166','#06d6a0','#118ab2','#9b5de5','#ff70a6'];
+  for(let i=0;i<120;i++){
+    parts.push({ x:innerWidth/2, y:innerHeight*0.35,
+      vx:(Math.random()-0.5)*12, vy:Math.random()*-12-3,
+      g:0.35+Math.random()*0.2, s:6+Math.random()*8,
+      c:colors[i%colors.length], r:Math.random()*6, vr:(Math.random()-0.5)*0.4, life:90 });
+  }
+  if(parts.length) requestAnimationFrame(tick);
+}
+function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; p.life--;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r); cx.fillStyle=p.c;
+    cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6); cx.restore(); });
+  parts = parts.filter(p=>p.life>0 && p.y<cv.height+40);
+  if(parts.length) requestAnimationFrame(tick); else cx.clearRect(0,0,cv.width,cv.height);
+}
+
+/* ===================== КНОПКИ ===================== */
+$('listenAll').onclick = ()=> play(LESSONS[lessonIndex].phrase);
+$('prevBtn').onclick = ()=>{ if(lessonIndex>0){ lessonIndex--; renderLesson(); window.scrollTo({top:0,behavior:'smooth'}); } };
+$('nextBtn').onclick = ()=>{ if(lessonIndex<LESSONS.length-1){ lessonIndex++; renderLesson(); window.scrollTo({top:0,behavior:'smooth'}); } };
+$('resetBtn').onclick = renderLesson;
+$('toggleSample').onclick = ()=> document.body.classList.toggle('no-sample');
+$('helpBtn').onclick = ()=>{ $('help').classList.toggle('show'); };
+
+/* первый тап включает аудио-контекст (нужно на мобильных) */
+document.addEventListener('pointerdown', ensureCtx, { once:true });
+
+/* ===================== СТАРТ ===================== */
+async function init(){
+  try{
+    const r = await fetch('/api/config');
+    cfg = await r.json();
+    if(!cfg.hasKey){
+      showBanner('⚙️ Озвучка не настроена: задайте переменную ELEVENLABS_API_KEY на сервере (Render → Environment).');
+    }
+  }catch(e){
+    showBanner('⚙️ Не удалось получить настройки сервера.');
+  }
+  renderLesson();
+}
+init();
+</script>
+</body>
+</html>

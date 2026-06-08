@@ -1,0 +1,16 @@
+{
+  "name": "deutsch-lesen",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Учимся читать по-немецки: цветные кружки и квадратики с озвучкой ElevenLabs",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
