@@ -133,6 +133,9 @@
   .tile.circle{border-radius:50%;}
   .tile.square{border-radius:16px;}
   .tile:active{transform:scale(.9);}
+  .tile.audible{position:relative;}
+  .tile.audible::after{content:"🔊"; position:absolute; top:-8px; right:-7px; font-size:12px;
+    background:#fff; border-radius:50%; padding:2px 3px; box-shadow:0 2px 6px rgba(0,0,0,.2);}
 
   /* ---------- прогресс / победа ---------- */
   .progress{display:flex; align-items:center; gap:8px; font-weight:800; color:var(--muted); font-size:14px;}
@@ -195,12 +198,13 @@
   <!-- помощь родителю -->
   <div class="card help" id="help">
     <h2 style="font-size:20px;">Как это работает</h2>
-    <p>Сверху — <b>образец</b>: цветные кружки (буквы) и квадратики (буквосочетания). Нажми на любой — услышишь звук. Ниже — такие же <b>пустые</b> фигуры. Внизу — <b>палитра</b> из цветов и букв.</p>
+    <p>Сверху — <b>образец</b>: цветные кружки (буквы) и квадратики (буквосочетания), <b>без подписей</b>. Нажми на любой — услышишь звук. Ниже — такие же <b>пустые</b> фигуры. Внизу — <b>палитра</b> из цветов и букв; буквы в палитре тоже можно нажать и послушать (значок 🔊).</p>
     <ol>
       <li>Нажми на пустую фигуру — услышишь её звук, фигура подсветится.</li>
-      <li>Подбери в палитре <b>такой же цвет</b> и <b>такую же букву</b>, как в образце.</li>
+      <li>Подбери в палитре <b>такой же цвет</b> (как у фигуры в образце сверху) и <b>такую же букву</b> (по звуку).</li>
       <li>Правильно — фигура заполняется ✓. Неправильно — фигура «помотает головой», попробуй ещё.</li>
     </ol>
+    <p style="color:#9a8474;">Уровни 1–4 — просто наборы букв и буквосочетаний. Со 5-го уровня начинаются слова.</p>
     <h3>Звук кэшируется</h3>
     <p>Каждый звук запрашивается у ElevenLabs только один раз, потом берётся из памяти браузера — API лишний раз не дёргается.</p>
     <h3>Как менять уроки и звуки</h3>
@@ -259,10 +263,11 @@
 
 // один и тот же звук всегда красится одним цветом — так легче запоминать
 const GRAPHEME_COLOR = {
-  'm':'#ef476f', 'a':'#118ab2', 'h':'#06d6a0', 'l':'#9b5de5', 'o':'#f78c6b',
-  'sch':'#ff70a6', 'u':'#ffc43d', 'e':'#1b9aaa', 'w':'#5e60ce', 'ie':'#80b918',
-  'ei':'#48cae4', 'ß':'#bc8a5f', 't':'#e76f51', 'd':'#2a9d8f', 'n':'#7209b7',
-  'p':'#f4a261', 's':'#43aa8b', 'g':'#577590'
+  'a':'#118ab2', 'm':'#ef476f', 'o':'#f78c6b',
+  'e':'#1b9aaa', 'i':'#c77dff', 'u':'#ffc43d',
+  'l':'#9b5de5', 's':'#43aa8b', 'n':'#f15bb5', 't':'#e76f51',
+  'ie':'#80b918', 'ei':'#48cae4', 'sch':'#ff70a6', 'ch':'#3a86ff',
+  'h':'#06d6a0', 'w':'#5e60ce', 'ß':'#bc8a5f', 'd':'#2a9d8f', 'g':'#577590'
 };
 
 function tok(ch, g, kind, speak){
@@ -272,26 +277,34 @@ const L = (ch, g, speak) => tok(ch, g, 'letter', speak);   // кружок
 const C = (ch, g, speak) => tok(ch, g, 'combo',  speak);   // квадрат
 
 const LESSONS = [
-  { id:'mama', ru:'Мама', phrase:'Mama',
+  // --- УРОВНИ 1–4: просто наборы букв (без слов) ---
+  { id:'set1', mode:'letters', ru:'Буквы', words:[[ L('a','a'), L('m','m'), L('o','o') ]] },
+  { id:'set2', mode:'letters', ru:'Буквы', words:[[ L('e','e'), L('i','i'), L('u','u') ]] },
+  { id:'set3', mode:'letters', ru:'Буквы', words:[[ L('l','l'), L('s','s'), L('n','n'), L('t','t') ]] },
+  { id:'set4', mode:'letters', ru:'Буквосочетания',
+    words:[[ C('ie','ie'), C('ei','ei'), C('Sch','sch'), C('ch','ch') ]] },
+
+  // --- УРОВЕНЬ 5 и далее: слова ---
+  { id:'mama', mode:'word', ru:'Мама', phrase:'Mama',
     words:[[ L('M','m'), L('a','a'), L('m','m'), L('a','a') ]] },
 
-  { id:'hallo', ru:'Привет', phrase:'Hallo',
-    words:[[ L('H','h'), L('a','a'), L('l','l'), L('l','l'), L('o','o') ]] },
-
-  { id:'oma', ru:'Бабушка', phrase:'Oma',
+  { id:'oma', mode:'word', ru:'Бабушка', phrase:'Oma',
     words:[[ L('O','o'), L('m','m'), L('a','a') ]] },
 
-  { id:'schule', ru:'Школа', phrase:'Schule',
+  { id:'hallo', mode:'word', ru:'Привет', phrase:'Hallo',
+    words:[[ L('H','h'), L('a','a'), L('l','l'), L('l','l'), L('o','o') ]] },
+
+  { id:'schule', mode:'word', ru:'Школа', phrase:'Schule',
     words:[[ C('Sch','sch'), L('u','u'), L('l','l'), L('e','e') ]] },
 
-  { id:'wie-heisst-du', ru:'Как тебя зовут?', phrase:'Wie heißt du?',
+  { id:'wie-heisst-du', mode:'word', ru:'Как тебя зовут?', phrase:'Wie heißt du?',
     words:[
       [ L('W','w'), C('ie','ie') ],
       [ L('h','h'), C('ei','ei'), L('ß','ß','ss'), L('t','t') ],
       [ L('d','d'), L('u','u') ]
     ] },
 
-  { id:'guten-tag', ru:'Добрый день', phrase:'Guten Tag',
+  { id:'guten-tag', mode:'word', ru:'Добрый день', phrase:'Guten Tag',
     words:[
       [ L('G','g'), L('u','u'), L('t','t'), L('e','e'), L('n','n') ],
       [ L('T','t'), L('a','a'), L('g','g') ]
@@ -379,10 +392,27 @@ async function play(text){
   }
 }
 
+// последовательное проигрывание (для "послушать все буквы")
+async function playSeq(texts){
+  for(const text of texts){
+    try{
+      const blob = await getBlob(text);
+      const url = URL.createObjectURL(blob);
+      await new Promise(res=>{
+        const a = new Audio(url);
+        a.onended = ()=>{ URL.revokeObjectURL(url); res(); };
+        a.onerror = ()=> res();
+        a.play().catch(()=>res());
+      });
+    }catch(e){ /* пропускаем */ }
+  }
+}
+
 // фоновая «прогрузка» всех звуков урока, чтобы нажатия были мгновенными
 async function prewarm(){
   const texts = new Set();
-  texts.add(LESSONS[lessonIndex].phrase);
+  const lesson = LESSONS[lessonIndex];
+  if(lesson.mode==='word' && lesson.phrase) texts.add(lesson.phrase);
   tokens.forEach(t => texts.add(t.speak));
   for(const t of texts){
     try{ await getBlob(t); }catch(e){ /* тихо */ }
@@ -434,16 +464,18 @@ function renderLesson(){
   state = tokens.map(()=>({ color:null, g:null, locked:false }));
   selected = -1;
 
-  $('lessonDe').textContent = lesson.phrase;
+  $('lessonDe').textContent = lesson.mode==='word'
+      ? lesson.phrase
+      : tokens.map(t=>t.ch).join('  ');
   $('lessonRu').textContent = lesson.ru;
+  $('listenAll').textContent = lesson.mode==='word' ? '🔊 ganzes Wort' : '🔊 alle Laute';
 
-  // --- образец ---
+  // --- образец: ТОЛЬКО цвет, без букв ---
   const keyRow = $('keyRow'); keyRow.innerHTML='';
   tokens.forEach((t, i) => {
     if(wordStart.has(i)){ const gap=document.createElement('div'); gap.className='wordgap'; keyRow.appendChild(gap); }
     const el = makeShape(t);
     el.style.background = t.color;
-    el.textContent = t.ch;
     el.addEventListener('click', ()=> play(t.speak));
     keyRow.appendChild(el);
   });
@@ -474,9 +506,9 @@ function renderLesson(){
   const letRow = $('paletteLetters'); letRow.innerHTML='';
   shuffle(letters).forEach(t => {
     const el = document.createElement('div');
-    el.className = 'tile ' + (t.kind==='letter'?'circle':'square');
+    el.className = 'tile audible ' + (t.kind==='letter'?'circle':'square');
     el.textContent = t.ch;
-    el.addEventListener('click', ()=> onLetterClick(t.g, el));
+    el.addEventListener('click', ()=> onLetterClick(t.g, el, t.speak));
     letRow.appendChild(el);
   });
 
@@ -525,8 +557,9 @@ function onColorClick(c, sw){
   }
 }
 
-function onLetterClick(g, tile){
-  if(selected<0){ shakeEl(tile); return; }
+function onLetterClick(g, tile, speak){
+  play(speak);                 // палитра букв всегда озвучивается по нажатию
+  if(selected<0) return;       // ничего не выбрано — просто послушали
   const i = selected, t = tokens[i];
   if(g === t.g){
     state[i].g = g;
@@ -563,11 +596,14 @@ function updateProgress(){
 function onWin(){
   chimeWin();
   burstConfetti();
-  setTimeout(()=> play(LESSONS[lessonIndex].phrase), 350);
+  const lesson = LESSONS[lessonIndex];
+  const isWord = lesson.mode==='word';
+  setTimeout(()=> isWord ? play(lesson.phrase) : playSeq(tokens.map(t=>t.speak)), 350);
   const last = lessonIndex >= LESSONS.length-1;
+  const bigTxt = isWord ? ('🎉 Super! '+lesson.phrase) : '🎉 Super!';
   $('winBox').innerHTML =
-    '<div class="win"><div class="big">🎉 Super! '+LESSONS[lessonIndex].phrase+'</div>'+
-    '<div class="sub">'+LESSONS[lessonIndex].ru+'</div>'+
+    '<div class="win"><div class="big">'+bigTxt+'</div>'+
+    '<div class="sub">'+lesson.ru+'</div>'+
     '<div class="btn-row">'+
       '<button class="btn ghost" id="winReplay">↺ noch mal</button>'+
       (last? '<button class="btn" id="winRestart">🏠 von vorne</button>'
@@ -603,7 +639,11 @@ function tick(){
 }
 
 /* ===================== КНОПКИ ===================== */
-$('listenAll').onclick = ()=> play(LESSONS[lessonIndex].phrase);
+$('listenAll').onclick = ()=>{
+  const lesson = LESSONS[lessonIndex];
+  if(lesson.mode==='word' && lesson.phrase) play(lesson.phrase);
+  else playSeq(tokens.map(t=>t.speak));
+};
 $('prevBtn').onclick = ()=>{ if(lessonIndex>0){ lessonIndex--; renderLesson(); window.scrollTo({top:0,behavior:'smooth'}); } };
 $('nextBtn').onclick = ()=>{ if(lessonIndex<LESSONS.length-1){ lessonIndex++; renderLesson(); window.scrollTo({top:0,behavior:'smooth'}); } };
 $('resetBtn').onclick = renderLesson;

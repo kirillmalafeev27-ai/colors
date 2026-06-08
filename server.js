@@ -1,13 +1,8 @@
-/* Маленький сервер для приложения "Учимся читать по-немецки".
- *
- * Что он делает:
- *  - отдаёт статическую страницу из папки public
- *  - проксирует запросы к ElevenLabs (ключ хранится ТОЛЬКО на сервере,
- *    в браузер он никогда не попадает)
- *  - кэширует сгенерированное аудио на диске, чтобы один и тот же звук
- *    не запрашивался у ElevenLabs повторно
- *
- * Нужен только один секрет — переменная окружения ELEVENLABS_API_KEY.
+/* Сервер приложения "Учимся читать по-немецки".
+ *  - отдаёт страницу index.html (ищет её в нескольких местах — устойчиво к
+ *    тому, лежит ли она в public/ или рядом с server.js)
+ *  - проксирует ElevenLabs (ключ только на сервере, в браузер не попадает)
+ *  - кэширует аудио на диске
  */
 
 const express = require('express');
@@ -20,23 +15,30 @@ app.use(express.json({ limit: '256kb' }));
 
 const PORT = process.env.PORT || 3000;
 
-// --- настройки (можно переопределить переменными окружения на Render) ---
 const API_KEY  = process.env.ELEVENLABS_API_KEY || '';
-// Голос по умолчанию из документации ElevenLabs. Свой ID можно взять в кабинете
-// ElevenLabs (Voices -> у голоса есть Voice ID) и положить в ELEVENLABS_VOICE_ID.
 const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
-// flash v2.5 — быстрый, дешёвый и поддерживает явное указание языка.
 const MODEL_ID = process.env.ELEVENLABS_MODEL_ID || 'eleven_flash_v2_5';
 const LANG     = process.env.ELEVENLABS_LANG || 'de';
 
-// Папка кэша. На бесплатном тарифе Render диск временный (очищается при
-// перезапуске) — это нормально: в браузере есть свой постоянный кэш.
+// Ищем index.html в нескольких возможных местах
+const INDEX_CANDIDATES = [
+  path.join(__dirname, 'public', 'index.html'),
+  path.join(__dirname, 'index.html'),
+  path.join(process.cwd(), 'public', 'index.html'),
+  path.join(process.cwd(), 'index.html')
+];
+function findIndex() {
+  for (const p of INDEX_CANDIDATES) { if (fs.existsSync(p)) return p; }
+  return null;
+}
+
 const CACHE_DIR = path.join(process.env.TMPDIR || '/tmp', 'tts-cache');
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
+// статика (если рядом со страницей есть другие файлы)
+const found = findIndex();
+if (found) app.use(express.static(path.dirname(found), { maxAge: '1h' }));
 
-// Безопасные (не секретные) настройки для фронтенда
 app.get('/api/config', (req, res) => {
   res.json({ voiceId: VOICE_ID, modelId: MODEL_ID, lang: LANG, hasKey: !!API_KEY });
 });
@@ -56,11 +58,9 @@ app.post('/api/tts', async (req, res) => {
     const modelId = String((req.body && req.body.modelId) || MODEL_ID);
 
     const hashKey = crypto.createHash('sha1')
-      .update([voiceId, modelId, LANG, text].join('|'))
-      .digest('hex');
+      .update([voiceId, modelId, LANG, text].join('|')).digest('hex');
     const file = path.join(CACHE_DIR, hashKey + '.mp3');
 
-    // 1) отдаём из дискового кэша, если есть
     if (fs.existsSync(file)) {
       res.set('Content-Type', 'audio/mpeg');
       res.set('X-Cache', 'HIT');
@@ -68,25 +68,17 @@ app.post('/api/tts', async (req, res) => {
       return fs.createReadStream(file).pipe(res);
     }
 
-    // 2) иначе генерируем у ElevenLabs
     const body = {
-      text,
-      model_id: modelId,
+      text, model_id: modelId,
       voice_settings: { stability: 0.5, similarity_boost: 0.8 }
     };
     if (LANG) body.language_code = LANG;
 
     const r = await fetch(
       'https://api.elevenlabs.io/v1/text-to-speech/' + encodeURIComponent(voiceId),
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': API_KEY,
-          'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg'
-        },
-        body: JSON.stringify(body)
-      }
+      { method: 'POST',
+        headers: { 'xi-api-key': API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+        body: JSON.stringify(body) }
     );
 
     if (!r.ok) {
@@ -95,8 +87,7 @@ app.post('/api/tts', async (req, res) => {
     }
 
     const buf = Buffer.from(await r.arrayBuffer());
-    fs.writeFile(file, buf, () => {}); // пишем в кэш, ошибки игнорируем
-
+    fs.writeFile(file, buf, () => {});
     res.set('Content-Type', 'audio/mpeg');
     res.set('X-Cache', 'MISS');
     res.set('Cache-Control', 'public, max-age=31536000, immutable');
@@ -106,4 +97,19 @@ app.post('/api/tts', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log('Сервер запущен на порту ' + PORT));
+// Любой GET-запрос (кроме /api) отдаёт страницу — поэтому "/" всегда работает
+app.get(/^(?!\/api).*/, (req, res) => {
+  const idx = findIndex();
+  if (idx) return res.sendFile(idx);
+  res.status(500).send(
+    '<h2>index.html не найден на сервере.</h2>' +
+    '<p>Проверьте, что в репозитории есть файл <code>public/index.html</code> ' +
+    '(или <code>index.html</code> рядом с <code>server.js</code>).</p>'
+  );
+});
+
+app.listen(PORT, () => {
+  const idx = findIndex();
+  console.log('Сервер запущен на порту ' + PORT);
+  console.log(idx ? ('index.html найден: ' + idx) : 'ВНИМАНИЕ: index.html НЕ найден!');
+});
